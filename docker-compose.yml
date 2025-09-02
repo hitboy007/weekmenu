@@ -1,0 +1,46 @@
+# version字段在新版本docker-compose中已废弃，移除即可
+
+services:
+  weekmenu:
+    build: 
+      context: .
+      dockerfile: Dockerfile.simple
+      # 其他选项：
+      # dockerfile: Dockerfile.optimized
+      # dockerfile: Dockerfile
+    container_name: weekmenu-app
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - TZ=Asia/Shanghai
+    volumes:
+      # 可选：挂载数据目录以持久化JSON文件
+      - ./data:/usr/share/nginx/html/data
+    networks:
+      - weekmenu-network
+    labels:
+      # 1Panel兼容标签
+      - "1panel.enable=true"
+      - "1panel.name=weekmenu"
+      - "1panel.description=每日菜单查询系统"
+      - "1panel.port=8080"
+      - "traefik.enable=true"
+      - "traefik.http.routers.weekmenu.rule=Host(`localhost`)"
+      - "traefik.http.services.weekmenu.loadbalancer.server.port=80"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  weekmenu-network:
+    driver: bridge
+
+# 可选：如果需要数据持久化
+volumes:
+  weekmenu-data:
+    driver: local
